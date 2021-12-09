@@ -2,6 +2,7 @@
   <div id="app">
     <svg-icon icon="eye" title="The eye never lie" />
     <svg-icon icon="map2" title="Search the thing you lost" />
+    <svg-icon icon="wink2" />
   </div>
 </template>
 
