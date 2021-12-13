@@ -1,30 +1,42 @@
 const fs = require('fs')
 
-fs.readdir('./svgs/', (err, svgFiles) => {
-    svgFiles = svgFiles.filter((file) => {
-        return file.includes('.svg')
-    })
+fs.readdir('./svgs/', { //gets all dirs in svgs dir
+    withFileTypes: true
+}, async (err, files) => {
+    const svgFolders = files.filter((file) => file.isDirectory()).map((dir) => dir.name) //take all files and return dir names
+    const prms = svgFolders.map((folder) => {
+        return new Promise((resolveFolder, rejectFolder) => {
 
-    const prms = svgFiles.map((fileName) => {
-        return new Promise((resolve, reject) => {
-            fs.readFile(`./svgs/${fileName}`, 'utf-8', (err, data) => {
-                // console.log(data);
-                resolve(data)
+            fs.readdir(`./svgs/${folder}`, async (err, svgNames) => {
+                svgNames = svgNames.filter((file) => file.includes('.svg'))
+
+                const filesPrms = svgNames.map((fileName) => {
+                    return new Promise((resolve, reject) => {
+                        fs.readFile(`./svgs/${folder}/${fileName}`, 'utf-8', (err, data) => {
+                            resolve(data)
+                        })
+                    })
+                })
+
+                const files = await Promise.all(filesPrms)
+                resolveFolder({
+                    files,
+                    svgNames: svgNames
+                })
             })
         })
     })
 
-    Promise.all(prms)
-        .then((svgs) => {
-            const stream = fs.createWriteStream('./index.html');
-            stream.once('open', function (fd) {
-                const html = createHtml(svgs, svgFiles)
-                stream.end(html);
-            });
-        })
+    let folders = await Promise.all(prms)
+    folders = folders.flat(1)
+    const stream = fs.createWriteStream('./index.html');
+    stream.once('open', function (fd) {
+        const html = createHtml(folders, svgFolders)
+        stream.end(html);
+    });
 })
 
-function createHtml(svgs, svgFiles) {
+function createHtml(foldersContent, foldersName) {
     const head = `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -45,7 +57,7 @@ function createHtml(svgs, svgFiles) {
                 margin: 0.75em 0;
             }
             h2{
-                margin:0;
+                margin-bottom: 10px;
             }
             .svg-preview{
                 display:flex;
@@ -70,20 +82,20 @@ function createHtml(svgs, svgFiles) {
     </head>`
     let body =
         `<body>
-        <div class="main-container">
-        <h1>32px Preview</h1>
-            <section class="svgs-container">`
-    body += svgs.map((svg, idx) => {
-        return `<div class="svg-preview">
-                    <div class="svg-container">${svg}</div>
-                    <h2> ${svgFiles[idx].replace('.svg', '')} </h2>
-                </div>`
+    <div class="main-container">
+        <h1>32px Preview</h1>`
+    body += foldersContent.map((svgContent, idx) => {
+        let strHTML = `<h2>${foldersName[idx]}</h2>
+        <section class="svgs-container">`
+        strHTML += svgContent.files.map((svg, idx) => {
+            return `<div class="svg-preview">
+            <div class="svg-container">${svg}</div>
+            <h4> ${svgContent.svgNames[idx].replace('.svg', '')} </h4>
+            </div>`
+        }).join('')
+        strHTML += `</section>`
+        return strHTML
     }).join('')
-    body += `
-                <section>
-            </div>
-        </body>
-    </html>`
-
+    body += `</div></body></html>`
     return head + body
 }

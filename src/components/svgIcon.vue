@@ -15,10 +15,11 @@ export default {
     classList: { type: String, default: "" },
     title: { type: String },
     size: { default: () => ({ width: 64, height: 64 }) },
+    fileName: { type: String, required: true, default: "svgs" },
   },
   computed: {
     constructedIcon() {
-      return require("@/assets/svg/svgs.svg") + "#";
+      return require(`@/assets/svg/${this.fileName}.svg`) + "#";
     },
   },
 };
