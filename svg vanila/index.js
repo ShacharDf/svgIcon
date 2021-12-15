@@ -1,43 +1,54 @@
-const fs = require('fs')
+const fs = require('fs').promises
+const { createWriteStream } = require('fs');
 
-fs.readdir('./svgs/', { //gets all dirs in svgs dir
-    withFileTypes: true
-}, async (err, files) => {
-    const svgFolders = files.filter((file) => file.isDirectory()).map((dir) => dir.name) //take all files and return dir names
-    const prms = svgFolders.map((folder) => {
-        return new Promise((resolveFolder, rejectFolder) => {
-
-            fs.readdir(`./svgs/${folder}`, async (err, svgNames) => {
-                svgNames = svgNames.filter((file) => file.includes('.svg'))
-
-                const filesPrms = svgNames.map((fileName) => {
-                    return new Promise((resolve, reject) => {
-                        fs.readFile(`./svgs/${folder}/${fileName}`, 'utf-8', (err, data) => {
-                            resolve(data)
-                        })
-                    })
-                })
-
-                const files = await Promise.all(filesPrms)
-                resolveFolder({
-                    files,
-                    svgNames: svgNames
-                })
-            })
-        })
+(async function run() {
+    let folders = await fs.readdir('../src/assets/imgs/svg/', { withFileTypes: true })
+    folders = folders.filter((file) => file.isDirectory()).map((dir) => dir.name)
+    const foldersPrms = folders.map(async (folder) => {
+        const content = await readFiles(folder)
+        return createSection(content, folder);
     })
-
-    let folders = await Promise.all(prms)
-    folders = folders.flat(1)
-    const stream = fs.createWriteStream('./index.html');
-    stream.once('open', function (fd) {
-        const html = createHtml(folders, svgFolders)
+    const htmlContent = await Promise.all(foldersPrms)
+    const stream = createWriteStream('./index.html')
+    stream.once('open', function () {
+        const html = createHTML(htmlContent.join(''))
         stream.end(html);
     });
-})
+})()
 
-function createHtml(foldersContent, foldersName) {
-    const head = `<!DOCTYPE html>
+async function readFiles(folder) {
+    let svgNames = await fs.readdir(`./svgs/${folder}`)
+    svgNames = svgNames.filter((file) => file.includes('.svg'))
+    const filesPrms = svgNames.map((fileName) => {
+        return fs.readFile(`./svgs/${folder}/${fileName}`, 'utf-8')
+    })
+    const files = await Promise.all(filesPrms)
+    const filesWithNames = svgNames.map((svgName, idx) => {
+        return { name: svgName, content: files[idx] }
+    })
+    return filesWithNames
+}
+
+function createSection(files, folder) {
+    let strHTML = `
+    <h2>${folder}</h2>
+    <section class="svgs-container">`
+    strHTML += files.map(file => createArticle(file)).join('')
+    strHTML += `</section>`
+    return strHTML
+}
+
+function createArticle(file) {
+    return `
+    <article class="svg-preview">
+        <div class="svg-container">${file.content}</div>
+        <h4> ${file.name.replace('.svg', '')} </h4>
+    </article>
+    `
+}
+
+function htmlHeader() {
+    return `<!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
@@ -80,22 +91,13 @@ function createHtml(foldersContent, foldersName) {
             }
         </style>
     </head>`
-    let body =
-        `<body>
-    <div class="main-container">
-        <h1>32px Preview</h1>`
-    body += foldersContent.map((svgContent, idx) => {
-        let strHTML = `<h2>${foldersName[idx]}</h2>
-        <section class="svgs-container">`
-        strHTML += svgContent.files.map((svg, idx) => {
-            return `<div class="svg-preview">
-            <div class="svg-container">${svg}</div>
-            <h4> ${svgContent.svgNames[idx].replace('.svg', '')} </h4>
-            </div>`
-        }).join('')
-        strHTML += `</section>`
-        return strHTML
-    }).join('')
-    body += `</div></body></html>`
-    return head + body
+}
+
+function createHTML(htmlContent) {
+    let strHTML = htmlHeader()
+    strHTML += `<div class="main-container">
+    <h1>32px Preview</h1>`
+    strHTML += htmlContent
+    strHTML += `</div></body></html>`
+    return strHTML;
 }

@@ -12,7 +12,7 @@ gulp.task('svg-generator', () => {
             .pipe(svgmin())
             .pipe(svgstore())
             .pipe(rename(`${folder}.svg`))
-            .pipe(gulp.dest(`./public/imgs/svg/`))
+            .pipe(gulp.dest(`./src/assets/svg/`))
     });
     return mergeStream(tasks);
 })

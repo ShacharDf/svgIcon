@@ -9,6 +9,7 @@
     <svg-icon icon="map2" title="Search the thing you lost" fileName="svgs" />
     <svg-icon icon="wink2" fileName="svgs" />
     <svg-icon icon="arrow-down" fileName="grey" />
+    <svg-icon icon="pie-chart" fileName="black" classList="blue-eye" />
   </div>
 </template>
 
@@ -34,7 +35,7 @@ export default {
 }
 
 .blue-eye {
-  fill: rgb(46, 46, 192);
+  fill: rgb(32, 32, 136);
   stroke: black;
 }
 </style>
