@@ -2,14 +2,14 @@
   <div id="app">
     <svg-icon
       icon="eye"
-      classList="blue-eye"
+      classList="blue-svg"
       title="The eye never lie"
       fileName="svgs"
     />
     <svg-icon icon="map2" title="Search the thing you lost" fileName="svgs" />
     <svg-icon icon="wink2" fileName="svgs" />
     <svg-icon icon="arrow-down" fileName="grey" />
-    <svg-icon icon="pie-chart" fileName="black" classList="blue-eye" />
+    <svg-icon icon="pie-chart" fileName="black" classList="blue-svg" />
   </div>
 </template>
 
@@ -34,7 +34,7 @@ export default {
   margin-top: 60px;
 }
 
-.blue-eye {
+.blue-svg {
   fill: rgb(32, 32, 136);
   stroke: black;
 }
